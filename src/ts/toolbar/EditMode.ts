@@ -2,11 +2,13 @@ import {Constants} from "../constants";
 import {i18n} from "../i18n";
 import {processAfterRender} from "../ir/process";
 import {getMarkdown} from "../markdown/getMarkdown";
+import {mathRender} from "../markdown/mathRender";
 import {processAfterRender as processSVAfterRender, processSpinVditorSVDOM} from "../sv/process";
 import {setPadding, setTypewriterPosition} from "../ui/initUI";
 import {getEventName, updateHotkeyTip} from "../util/compatibility";
 import {highlightToolbar} from "../util/highlightToolbar";
 import {processCodeRender} from "../util/processCode";
+import {renderToc} from "../util/toc";
 import {renderDomByMd} from "../wysiwyg/renderDomByMd";
 import {MenuItem} from "./MenuItem";
 import {
@@ -50,6 +52,10 @@ export const setEditMode = (vditor: IVditor, type: string, event: Event | string
         vditor.wysiwyg.element.parentElement.style.display = "none";
         vditor.ir.element.parentElement.style.display = "block";
 
+        vditor.lute.SetVditorIR(true);
+        vditor.lute.SetVditorWYSIWYG(false);
+        vditor.lute.SetVditorSV(false);
+
         vditor.currentMode = "ir";
         vditor.ir.element.innerHTML = vditor.lute.Md2VditorIRDOM(markdownText);
         processAfterRender(vditor, {
@@ -63,12 +69,22 @@ export const setEditMode = (vditor: IVditor, type: string, event: Event | string
         vditor.ir.element.querySelectorAll(".vditor-ir__preview[data-render='2']").forEach((item: HTMLElement) => {
             processCodeRender(item, vditor);
         });
+        vditor.ir.element.querySelectorAll(".vditor-toc").forEach((item: HTMLElement) => {
+            mathRender(item, {
+                cdn: vditor.options.cdn,
+                math: vditor.options.preview.math,
+            });
+        });
     } else if (type === "wysiwyg") {
         hideToolbar(vditor.toolbar.elements, ["both"]);
         showToolbar(vditor.toolbar.elements, ["outdent", "indent", "outline", "insert-before", "insert-after"]);
         vditor.sv.element.style.display = "none";
         vditor.wysiwyg.element.parentElement.style.display = "block";
         vditor.ir.element.parentElement.style.display = "none";
+
+        vditor.lute.SetVditorIR(false);
+        vditor.lute.SetVditorWYSIWYG(true);
+        vditor.lute.SetVditorSV(false);
 
         vditor.currentMode = "wysiwyg";
 
@@ -77,6 +93,12 @@ export const setEditMode = (vditor: IVditor, type: string, event: Event | string
             enableAddUndoStack: true,
             enableHint: false,
             enableInput: false,
+        });
+        vditor.wysiwyg.element.querySelectorAll(".vditor-toc").forEach((item: HTMLElement) => {
+            mathRender(item, {
+                cdn: vditor.options.cdn,
+                math: vditor.options.preview.math,
+            });
         });
         vditor.wysiwyg.popover.style.display = "none";
     } else if (type === "sv") {
@@ -89,8 +111,13 @@ export const setEditMode = (vditor: IVditor, type: string, event: Event | string
         } else if (vditor.options.preview.mode === "editor") {
             vditor.sv.element.style.display = "block";
         }
+
+        vditor.lute.SetVditorIR(false);
+        vditor.lute.SetVditorWYSIWYG(false);
+        vditor.lute.SetVditorSV(true);
+
         vditor.currentMode = "sv";
-        let svHTML =  processSpinVditorSVDOM(markdownText, vditor);
+        let svHTML = processSpinVditorSVDOM(markdownText, vditor);
         if (svHTML === "<div data-block='0'></div>") {
             // https://github.com/Vanessa219/vditor/issues/654 SV 模式 Placeholder 显示问题
             svHTML = "";
@@ -109,9 +136,7 @@ export const setEditMode = (vditor: IVditor, type: string, event: Event | string
         vditor[vditor.currentMode].element.focus();
         highlightToolbar(vditor);
     }
-    if (typeof event === "string") {
-        vditor.outline.render(vditor);
-    }
+    renderToc(vditor);
     setTypewriterPosition(vditor);
 
     if (vditor.toolbar.elements["edit-mode"]) {
@@ -121,7 +146,7 @@ export const setEditMode = (vditor: IVditor, type: string, event: Event | string
         vditor.toolbar.elements["edit-mode"].querySelector(`button[data-mode="${vditor.currentMode}"]`).classList.add("vditor-menu--current");
     }
 
-    vditor.outline.toggle(vditor, vditor.currentMode !== "sv" && vditor.options.outline);
+    vditor.outline.toggle(vditor, vditor.currentMode !== "sv" && vditor.options.outline.enable);
 };
 
 export class EditMode extends MenuItem {
@@ -132,9 +157,9 @@ export class EditMode extends MenuItem {
 
         const panelElement = document.createElement("div");
         panelElement.className = `vditor-hint${menuItem.level === 2 ? "" : " vditor-panel--arrow"}`;
-        panelElement.innerHTML = `<button data-mode="wysiwyg">${i18n[vditor.options.lang].wysiwyg} &lt;${updateHotkeyTip("⌘-⌥-7")}></button>
-<button data-mode="ir">${i18n[vditor.options.lang].instantRendering} &lt;${updateHotkeyTip("⌘-⌥-8")}></button>
-<button data-mode="sv">${i18n[vditor.options.lang].splitView} &lt;${updateHotkeyTip("⌘-⌥-9")}></button>`;
+        panelElement.innerHTML = `<button data-mode="wysiwyg">${i18n[vditor.options.lang].wysiwyg} &lt;${updateHotkeyTip("⌥⌘7")}></button>
+<button data-mode="ir">${i18n[vditor.options.lang].instantRendering} &lt;${updateHotkeyTip("⌥⌘8")}></button>
+<button data-mode="sv">${i18n[vditor.options.lang].splitView} &lt;${updateHotkeyTip("⌥⌘9")}></button>`;
 
         this.element.appendChild(panelElement);
 

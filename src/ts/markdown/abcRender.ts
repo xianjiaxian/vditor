@@ -9,16 +9,17 @@ export const abcRender = (element: (HTMLElement | Document) = document, cdn = Co
     const abcElements = element.querySelectorAll(".language-abc");
     if (abcElements.length > 0) {
         addScript(`${cdn}/dist/js/abcjs/abcjs_basic.min.js`, "vditorAbcjsScript").then(() => {
-            abcElements.forEach((e: HTMLDivElement) => {
-                if (e.parentElement.classList.contains("vditor-wysiwyg__pre") ||
-                    e.parentElement.classList.contains("vditor-ir__marker--pre ")) {
+            abcElements.forEach((item: HTMLDivElement) => {
+                if (item.parentElement.classList.contains("vditor-wysiwyg__pre") ||
+                    item.parentElement.classList.contains("vditor-ir__marker--pre")) {
                     return;
                 }
-                const divElement = document.createElement("div");
-                divElement.className = "language-abc";
-                e.parentNode.replaceChild(divElement, e);
-                ABCJS.renderAbc(divElement, e.textContent.trim());
-                divElement.style.overflowX = "auto";
+                if (item.getAttribute("data-processed") === "true") {
+                    return;
+                }
+                ABCJS.renderAbc(item, item.textContent.trim());
+                item.style.overflowX = "auto";
+                item.setAttribute("data-processed", "true");
             });
         });
     }

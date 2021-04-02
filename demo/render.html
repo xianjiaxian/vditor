@@ -71,33 +71,18 @@
             overflow: auto;
             font-size: 12px;
             border-left: 1px solid var(--border-color);
+            border-right: 0;
             --border-color: #eee;
-            --color: #616161;
-            --hover-color: #4285f4;
+            --toolbar-icon-hover-color: #4285f4;
+            --textarea-text-color: #616161;
             --hover-background-color: #f6f8fa;
         }
 
         #outline.dark {
-            --border-color: #141414;
-            --color: #a6aab0;
-            --hover-color: #fff;
+            --border-color: #d1d5da;
+            --toolbar-icon-hover-color: #fff;
+            --textarea-text-color: #a6aab0;
             --hover-background-color: #444d56;
-        }
-
-        .vditor-outline__item {
-            border-left: 1px solid transparent;
-            color: var(--color) !important;
-        }
-
-        .vditor-outline__item--current {
-            border-left: 1px solid #4285f4;
-            color: var(--hover-color) !important;
-            background-color: var(--hover-background-color);
-        }
-
-        .vditor-outline__item:hover {
-            color: var(--hover-color) !important;
-            background-color: var(--hover-background-color) !important;
         }
 
         .vditor-reset ul[data-style="*"] {

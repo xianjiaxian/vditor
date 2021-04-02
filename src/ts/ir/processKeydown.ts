@@ -21,6 +21,7 @@ import {
 import {hasClosestByHeadings} from "../util/hasClosestByHeadings";
 import {matchHotKey} from "../util/hotKey";
 import {getEditorRange, getSelectPosition, setSelectionFocus} from "../util/selection";
+import {keydownToc} from "../util/toc";
 import {expandMarker} from "./expandMarker";
 import {processAfterRender, processHeading} from "./process";
 
@@ -36,7 +37,7 @@ export const processKeydown = (vditor: IVditor, event: KeyboardEvent) => {
         vditor.undo.recordFirstPosition(vditor, event);
     }
 
-    const range = getEditorRange(vditor.ir.element);
+    const range = getEditorRange(vditor);
     const startContainer = range.startContainer;
 
     if (!fixGSKeyBackspace(event, vditor, startContainer)) {
@@ -49,7 +50,7 @@ export const processKeydown = (vditor: IVditor, event: KeyboardEvent) => {
 
     // 仅处理以下快捷键操作
     if (event.key !== "Enter" && event.key !== "Tab" && event.key !== "Backspace" && event.key.indexOf("Arrow") === -1
-        && !isCtrl(event) && event.key !== "Escape") {
+        && !isCtrl(event) && event.key !== "Escape" && event.key !== "Delete") {
         return false;
     }
 
@@ -81,13 +82,6 @@ export const processKeydown = (vditor: IVditor, event: KeyboardEvent) => {
     // blockquote
     if (fixBlockquote(vditor, range, event, pElement)) {
         return true;
-    }
-    // toc 前无元素，插入空块
-    if (pElement && pElement.previousElementSibling &&
-        pElement.previousElementSibling.classList.contains("vditor-toc")) {
-        if (insertBeforeBlock(vditor, event, range, pElement, pElement.previousElementSibling as HTMLElement)) {
-            return true;
-        }
     }
     // 代码块
     const preRenderElement = hasClosestByClassName(startContainer, "vditor-ir__marker--pre");
@@ -166,7 +160,7 @@ export const processKeydown = (vditor: IVditor, event: KeyboardEvent) => {
     const headingElement = hasClosestByHeadings(startContainer);
     if (headingElement) {
         // enter++: 标题变大
-        if (matchHotKey("⌘-=", event)) {
+        if (matchHotKey("⌘=", event)) {
             const headingMarkerElement = headingElement.querySelector(".vditor-ir__marker--heading");
             if (headingMarkerElement && headingMarkerElement.textContent.trim().length > 1) {
                 processHeading(vditor, headingMarkerElement.textContent.substr(1));
@@ -176,7 +170,7 @@ export const processKeydown = (vditor: IVditor, event: KeyboardEvent) => {
         }
 
         // enter++: 标题变小
-        if (matchHotKey("⌘--", event)) {
+        if (matchHotKey("⌘-", event)) {
             const headingMarkerElement = headingElement.querySelector(".vditor-ir__marker--heading");
             if (headingMarkerElement && headingMarkerElement.textContent.trim().length < 6) {
                 processHeading(vditor, headingMarkerElement.textContent.trim() + "# ");
@@ -192,6 +186,7 @@ export const processKeydown = (vditor: IVditor, event: KeyboardEvent) => {
         }
 
         if (blockElement && blockElement.previousElementSibling
+            && blockElement.tagName !== "UL" && blockElement.tagName !== "OL"
             && (blockElement.previousElementSibling.getAttribute("data-type") === "code-block" ||
                 blockElement.previousElementSibling.getAttribute("data-type") === "math-block")) {
             const rangeStart = getSelectPosition(blockElement, vditor.ir.element, range).start;
@@ -235,5 +230,9 @@ export const processKeydown = (vditor: IVditor, event: KeyboardEvent) => {
     }
     fixCursorDownInlineMath(range, event.key);
 
+    if (blockElement && keydownToc(blockElement, vditor, event, range)) {
+        event.preventDefault();
+        return true;
+    }
     return false;
 };

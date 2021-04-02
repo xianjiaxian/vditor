@@ -57,7 +57,9 @@
 
       code {
         height: auto;
-        background-color: var(--code-background-color) !important;
+        color: var(--textarea-text-color);
+        height: auto;
+        text-align: left;
       }
     }
 
@@ -143,6 +145,10 @@
 
   details {
     white-space: initial;
+  }
+
+  a {
+    cursor: pointer;
   }
 
   span[data-type="backslash"] > span {

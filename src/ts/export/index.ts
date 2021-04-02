@@ -67,11 +67,11 @@ export const exportHTML = (vditor: IVditor) => {
         cdn: '${vditor.options.cdn}',
         math: ${JSON.stringify(vditor.options.preview.math)},
     });
-    Vditor.mermaidRender(previewElement, '${vditor.options.cdn}');
+    Vditor.mermaidRender(previewElement, '${vditor.options.cdn}', '${vditor.options.theme}');
     Vditor.flowchartRender(previewElement, '${vditor.options.cdn}');
     Vditor.graphvizRender(previewElement, '${vditor.options.cdn}');
-    Vditor.chartRender(previewElement, '${vditor.options.cdn}');
-    Vditor.mindmapRender(previewElement, '${vditor.options.cdn}');
+    Vditor.chartRender(previewElement, '${vditor.options.cdn}', '${vditor.options.theme}');
+    Vditor.mindmapRender(previewElement, '${vditor.options.cdn}', '${vditor.options.theme}');
     Vditor.abcRender(previewElement, '${vditor.options.cdn}');
     Vditor.mediaRender(previewElement);
 </script></body></html>`;

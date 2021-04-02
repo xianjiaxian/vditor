@@ -1,6 +1,7 @@
 import {Constants} from "../constants";
 import {outlineRender} from "../markdown/outlineRender";
 import {setPadding} from "../ui/initUI";
+import {setSelectionFocus} from "../util/selection";
 
 export class Outline {
     public element: HTMLElement;
@@ -13,14 +14,14 @@ export class Outline {
     }
 
     public render(vditor: IVditor) {
-        if (this.element.style.display === "block") {
-            if (vditor.preview.element.style.display === "block") {
-                outlineRender(vditor.preview.element.lastElementChild as HTMLElement,
-                    this.element.lastElementChild, vditor);
-            } else {
-                outlineRender(vditor[vditor.currentMode].element, this.element.lastElementChild, vditor);
-            }
+        let html = "";
+        if (vditor.preview.element.style.display === "block") {
+            html = outlineRender(vditor.preview.element.lastElementChild as HTMLElement,
+                this.element.lastElementChild, vditor);
+        } else {
+            html = outlineRender(vditor[vditor.currentMode].element, this.element.lastElementChild, vditor);
         }
+        return html;
     }
 
     public toggle(vditor: IVditor, show = true) {
@@ -32,6 +33,14 @@ export class Outline {
         } else {
             this.element.style.display = "none";
             btnElement?.classList.remove("vditor-menu--current");
+        }
+        if (getSelection().rangeCount > 0) {
+            const range = getSelection().getRangeAt(0);
+            if (vditor[vditor.currentMode].element.contains(range.startContainer)) {
+                setSelectionFocus(range);
+            } else {
+                vditor[vditor.currentMode].element.focus();
+            }
         }
         setPadding(vditor);
     }

@@ -143,7 +143,7 @@ const vditor = new Vditor(id, {options...})
 ```html
 <!-- ⚠️Please specify the version number in the production environment, such as https://cdn.jsdelivr.net/npm/vditor@x.x.x/dist... -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vditor/dist/index.css" />
-<script src="https://cdn.jsdelivr.net/npm/vditor/dist/index.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/vditor/dist/index.min.js"></script>
 ```
 
 ### Demo code
@@ -171,18 +171,19 @@ Can be filled with element `id` or element itself` HTMLElement`
 
 |   | Explanation | Default |
 | - | - | - |
+| undoDelay | Undo interval | - |
 | after | Callback method after editor asynchronous rendering is completed | - |
 | height | Total editor height | 'auto' |
 | minHeight | Editing area minimum height | - |
 | width | Total editor width, supports % | 'auto' |
 | placeholder | Tips when the input area is empty | '' |
 | lang | i18n: en_US, ja_JP, ko_KR, zh_CN | 'zh_CN' |
-| input | Trigger after input (value: string, previewElement?: HTMLElement): void | - |
-| focus | Trigger after focusing (value: string): void | - |
-| blur | Trigger after out of focus (value: string): void | - |
-| esc | Trigger after pressing <kbd>esc</kbd> (value: string): void | - |
-| ctrlEnter | Trigger after pressing <kbd>⌘/ctrl+enter</kbd> (value: string): void | - |
-| select | Triggered after selecting text in the editor (value: string): void | - |
+| input | Trigger after input (value: string) | - |
+| focus | Trigger after focusing (value: string) | - |
+| blur | Trigger after out of focus (value: string) | - |
+| esc | Trigger after pressing <kbd>esc</kbd> (value: string) | - |
+| ctrlEnter | Trigger after pressing <kbd>⌘/ctrl+enter</kbd> (value: string) | - |
+| select | Triggered after selecting text in the editor (value: string) | - |
 | tab | <kbd>tab</kbd> key operation string, support `\ t` and any string | - |
 | typewriterMode | Whether to enable typewriter mode | false |
 | cdn | Configure self-built CDN address | `https://cdn.jsdelivr.net/npm/vditor@${VDITOR_VERSION}` |
@@ -191,7 +192,6 @@ Can be filled with element `id` or element itself` HTMLElement`
 | value | Editor initialization value | '' |
 | theme | Theme: classic, dark | 'classic' |
 | icon | icon theme: ant, material | 'ant' |
-| outline | show outline | false |
 
 #### options.toolbar
 
@@ -203,7 +203,7 @@ Can be filled with element `id` or element itself` HTMLElement`
 new Vditor('vditor', {
   toolbar: [
     {
-      hotkey: '⌘-⇧-S',
+      hotkey: '⇧⌘S',
       name: 'sponsor',
       tipPosition: 's',
       tip: '成为赞助者',
@@ -219,11 +219,11 @@ new Vditor('vditor', {
 | name | Unique label | - |
 | icon | svg icon | - |
 | tip | Prompt | - |
-| tipPosition | Prompt location: ne, nw | - |
-| hotkey | Shortcut keys, support <kbd>⌘/ctrl-key</kbd> or <kbd>⌘/ctrl-⇧/shift-key</kbd> format configuration | - |
+| tipPosition | Prompt location: 'n', 'ne', 'nw', 's', 'se', 'sw', 'w', 'e' | - |
+| hotkey | Shortcut keys, support 为<kbd>⇧⌘</kbd>/<kbd>⌘</kbd>/<kbd>⌥⌘</kbd> format configuration | - |
 | suffix | Insert the suffix in the editor | - |
 | prefix | Insert the prefix in the editor | - |
-| click | Custom event triggered when button is clicked (): void | - |
+| click(event: Event, vditor: IVditor) | Custom event triggered when button is clicked | - |
 | className | Style name | '' |
 | toolbar?: Array<options.toolbar> | sub menu | - |
 
@@ -239,8 +239,9 @@ new Vditor('vditor', {
 |   | Explanation | Default |
 | - | - | - |
 | enable | Whether to use counter | false |
+| after(length: number, counter: options.counter): void | After count callback | - |
 | max | max counter | - |
-| type | counter type: md, text | 'md' |
+| type | counter type: 'markdown', 'text' | 'markdown' |
 
 #### options.cache
 
@@ -248,7 +249,19 @@ new Vditor('vditor', {
 | - | - | - |
 | enable | Whether to use localStorage for caching | true |
 | id | Cache key, the first parameter is an element and when caching is enabled **required** | - |
-| after | cache callback (markdown: string): void | - |
+| after | cache callback (markdown: string) | - |
+
+#### options.comment
+
+⚠️: Only supports wysiwyg mode
+
+|   | Explanation | Default |
+| - | - | - |
+| enable | Whether to enable comment mode | false |
+| add(id: string, text: string, commentsData: ICommentsData[]) | Add comment callback | - |
+| remove(ids: string[]) | delete comment callback | - |
+| scroll(top: number) | Scroll callback | - |
+| adjustTop(commentsData: ICommentsData[]) | Adapt the comment height | - |
 
 #### options.preview
 
@@ -258,7 +271,7 @@ new Vditor('vditor', {
 | maxWidth | Preview area maximum width | 800 |
 | mode | Display mode: both, editor | 'both' |
 | url | md parsing request | - |
-| parse | Preview callback (element: HTMLElement): void | - |
+| parse | Preview callback (element: HTMLElement) | - |
 | transform | Callback before rendering (html: string): string | - |
 
 #### options.preview.theme
@@ -283,7 +296,6 @@ new Vditor('vditor', {
 | - | - | - |
 | autoSpace | Autospace | false |
 | fixTermTypo | Automatically correct terminology | false |
-| chinesePunct | Automatic punctuation correction | false |
 | toc | Insert Table of Contents | false |
 | footnotes | Footnotes | true |
 | codeBlockPreview | Whether to render code blocks in wysiwyg and ir modes | true |
@@ -310,14 +322,16 @@ Default: ["desktop", "tablet", "mobile", "mp-wechat", "zhihu"]
 |   | Explanation | Default |
 | - | - | - |
 | key | Custom action ID, not Empty. | - |
+| tooltip | Tooltip | - |
 | text | Button Text | - |
 | className | Button Class | - |
-| click: (key: string) => void; | Click Event | - |
+| click(key: string) | Click Event | - |
 
 #### options.hint
 
 |   | Explanation | Default |
 | - | - | - |
+| parse | Whether to perform md parsing | true |
 | delay | Tip debounce millisecond interval | 200 |
 | emoji | The default emoji can be selected from [lute/emoji_map](https://github.com/88250/lute/blob/master/parse/emoji_map.go), or can be customized | { '+1': '👍', '-1': '👎', 'heart': '❤️', 'cold_sweat': '😰' } |
 | emojiTail | Common emoji | - |
@@ -379,8 +393,8 @@ xhr.send(JSON.stringify({url: src})); // src is the address of the image outside
 | linkToImgUrl | When the clipboard contains the image address, use this url to re-upload | '' |
 | linkToImgCallback | Callback when uploading picture address | - |
 | linkToImgFormat | Transform the data returned by the server to meet the built-in data structure (responseText: string): string | - |
-| success | Upload success callback (editor: HTMLPreElement, msg: string): void | - |
-| error | Upload failure callback (msg: string): void | - |
+| success | Upload success callback (editor: HTMLPreElement, msg: string) | - |
+| error | Upload failure callback (msg: string) | - |
 | token | CORS upload verification, header is X-Upload-Token | - |
 | withCredentials | Cross-site access control | false |
 | headers | Request header settings | - |
@@ -400,14 +414,27 @@ xhr.send(JSON.stringify({url: src})); // src is the address of the image outside
 |   | Explanation | Default |
 | - | - | - |
 | enable | Whether to support size drag | false |
-| position | Drag column position:top, bottom | 'bottom' |
-| after | Callback when dragging ends (height: number): void | - |
+| position | Drag column position: 'top', 'bottom' | 'bottom' |
+| after | Callback when dragging ends (height: number) | - |
 
 #### options.classes
 
 |   | Explanation | Default |
 | - | - | - |
 | preview | Preview on the element className | '' |
+
+#### options.fullscreen
+
+|   | Explanation | Default |
+| - | - | - |
+| index | fullscreen index | 90 |
+
+#### options.outline
+
+|   | Explanation | Default |
+| - | - | - |
+| enable | Initialize whether to show outline | false |
+| position | Outline location: 'left', 'right' | 'left' |
 
 #### methods
 
@@ -437,6 +464,10 @@ xhr.send(JSON.stringify({url: src})); // src is the address of the image outside
 | setTheme(theme: "dark" | "classic", contentTheme?: string, codeTheme?: string, contentThemePath?: string) | Set theme |
 | getCurrentMode(): string | Get the editor's current editing mode |
 | destroy() | Destroy the vditor |
+| getCommentIds(): {id: string, top: number}[] | Get all comments |
+| hlCommentIds(ids: string[]) | Highlight comment by Ids |
+| unHlCommentIds(ids: string[]) | Cancel highlight comment by Ids |
+| removeCommentIds(removeIds: string[]) | Remove comment by Ids |
 
 #### static methods
 
@@ -456,22 +487,23 @@ VditorPreview.mermaidRender(document)
 ```ts
 previewElement: HTMLDivElement,   // Use this element for rendering
 markdown: string,  // The original markdown to be rendered
-options?: IPreviewOptions {  
- anchor?: number;  // 0: no render, 1: render left, 2: render right
- customEmoji?: { [key: string]: string };    // Custom emoji, default is {}
- lang?: (keyof II18nLang);    // Language, default is 'zh_CN'  
- emojiPath?: string;    // Emoji picture path 
- hljs?: IHljs; // Refer to options.preview.hljs 
- speech?: {  // Read the selected content
-  enable?: boolean,
- };
- math?: IMath; // Math formula rendering configuration
- transform?(html: string): string; // Callback method before rendering
- after?(): void; // Callback method after rendering
- cdn?: string; // Self-built CDN address
- lazyLoadImage?: string; // use "https://cdn.jsdelivr.net/npm/vditor/dist/images/img-loading.svg" to lazy load image
- markdown?: options.preview.markdown;
- renderers?: ILuteRender; // Custom rendering method https://ld246.com/article/1588412297062
+options?: IPreviewOptions {
+  mode: "dark" | "light";
+  anchor?: number;  // 0: no render, 1: render left, 2: render right
+  customEmoji?: { [key: string]: string };    // Custom emoji, default is {}
+  lang?: (keyof II18nLang);    // Language, default is 'zh_CN'  
+  emojiPath?: string;    // Emoji picture path 
+  hljs?: IHljs; // Refer to options.preview.hljs 
+  speech?: {  // Read the selected content
+    enable?: boolean,
+  };
+  math?: IMath; // Math formula rendering configuration
+  transform?(html: string): string; // Callback method before rendering
+  after?(); // Callback method after rendering
+  cdn?: string; // Self-built CDN address
+  lazyLoadImage?: string; // use "https://cdn.jsdelivr.net/npm/vditor/dist/images/img-loading.svg" to lazy load image
+  markdown?: options.preview.markdown;
+  renderers?: ILuteRender; // Custom rendering method https://ld246.com/article/1588412297062
 }
 ```
 
@@ -479,10 +511,12 @@ options?: IPreviewOptions {
 
 |   | Explanation |
 | - | - |
-| mermaidRender(element: HTMLElement, cdn = options.cdn) | flowchart/sequence diagram/gantt diagram rendering |
-| mermaidRender(element: HTMLElement, cdn = options.cdn) | flowchart.js rendering |
+| previewImage(oldImgElement: HTMLImageElement, lang: keyof II18n = "zh_CN", theme = "classic") | Click on the image to preview |
+| mermaidRender(element: HTMLElement, cdn = options.cdn, theme = options.theme) | flowchart/sequence diagram/gantt diagram rendering |
+| flowchartRender(element: HTMLElement, cdn = options.cdn) | flowchart.js rendering |
 | codeRender(element: HTMLElement, lang: (keyof II18nLang) = "zh_CN") | Add a copy button for the code block in element |
-| chartRender(element: (HTMLElement\| Document) = document, cdn = options.cdn) | Chart rendering |
+| chartRender(element: (HTMLElement\| Document) = document, cdn = options.cdn, theme = options.theme) | Chart rendering |
+| plantumlRender(element: (HTMLElement\| Document) = document, cdn = options.cdn) | plantuml rendering |
 | abcRender(element: (HTMLElement\| Document) = document, cdn = options.cdn) | Stave rendering |
 | outlineRender(contentElement: HTMLElement, targetElement: Element, vditor?: IVditor) | Outline rendering |
 | md2html(mdText: string, options?: IPreviewOptions): Promise\<string> | Markdown text is converted to HTML, this method needs to use [asynchronous programming](https://ld246.com/article/1546828434083?r=Vanessa#toc_h3_1) |
@@ -495,7 +529,7 @@ options?: IPreviewOptions {
 | lazyLoadImageRender(element: (HTMLElement \| Document) = document) | Render lazy load image |
 | setCodeTheme (codeTheme: string, cdn = options.cdn)  | update code theme |
 | setContentTheme (contentTheme: string, path: string)  | update content theme |
-| mindmapRender (element: (HTMLElement \| Document) = document, cdn = options.cdn)  | Render mind map |
+| mindmapRender (element: (HTMLElement \| Document) = document, cdn = options.cdn, theme = options.theme)  | Render mind map |
 
 ## 🏗 Developer Guide
 

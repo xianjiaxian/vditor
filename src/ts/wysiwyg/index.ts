@@ -4,14 +4,14 @@ import {hidePanel} from "../toolbar/setToolbar";
 import {isCtrl, isFirefox} from "../util/compatibility";
 import {
     blurEvent,
-    copyEvent, cutEvent,
+    copyEvent, cutEvent, dblclickEvent,
     dropEvent,
     focusEvent,
     hotkeyEvent,
     scrollCenter,
     selectEvent,
 } from "../util/editorCommonEvent";
-import {isHeadingMD, isHrMD, paste, renderToc} from "../util/fixBrowserBehavior";
+import {isHeadingMD, isHrMD, paste} from "../util/fixBrowserBehavior";
 import {
     hasClosestBlock, hasClosestByAttribute,
     hasClosestByClassName, hasClosestByMatchTag,
@@ -23,6 +23,7 @@ import {
     getSelectPosition,
     setRangeByWbr,
 } from "../util/selection";
+import {clickToc, renderToc} from "../util/toc";
 import {afterRenderEvent} from "./afterRenderEvent";
 import {genImagePopover, genLinkRefPopover, highlightToolbarWYSIWYG} from "./highlightToolbarWYSIWYG";
 import {getRenderElementNextNode, modifyPre} from "./inlineTag";
@@ -30,6 +31,7 @@ import {input} from "./input";
 import {showCode} from "./showCode";
 
 class WYSIWYG {
+    public range: Range;
     public element: HTMLPreElement;
     public popover: HTMLDivElement;
     public selectPopover: HTMLDivElement;
@@ -59,6 +61,7 @@ class WYSIWYG {
         this.bindEvent(vditor);
 
         focusEvent(vditor, this.element);
+        dblclickEvent(vditor, this.element);
         blurEvent(vditor, this.element);
         hotkeyEvent(vditor, this.element);
         selectEvent(vditor, this.element);
@@ -74,6 +77,8 @@ class WYSIWYG {
                 const contents = range.extractContents();
                 let blockStartElement: HTMLElement;
                 let blockEndElement: HTMLElement;
+                let removeStart = false;
+                let removeEnd = false;
                 contents.childNodes.forEach((item: HTMLElement, index: number) => {
                     let wrap = false;
                     if (item.nodeType === 3) {
@@ -96,6 +101,11 @@ class WYSIWYG {
                                 `<span class="vditor-comment" data-cmtids="${id}">${item.innerHTML}</span>`;
                             blockEndElement = item;
                         } else if (item.nodeType !== 3 && item.getAttribute("data-block") === "0") {
+                            if (index === 0) {
+                                removeStart = true;
+                            } else if (index === contents.childNodes.length - 1) {
+                                removeEnd = true;
+                            }
                             item.innerHTML =
                                 `<span class="vditor-comment" data-cmtids="${id}">${item.innerHTML}</span>`;
                         } else {
@@ -107,18 +117,22 @@ class WYSIWYG {
                         }
                     }
                 });
-                if (blockStartElement) {
-                    const startElement = hasClosestBlock(rangeClone.startContainer);
-                    if (startElement) {
+                const startElement = hasClosestBlock(rangeClone.startContainer);
+                if (startElement) {
+                    if (blockStartElement) {
                         startElement.insertAdjacentHTML("beforeend", blockStartElement.innerHTML);
                         blockStartElement.remove();
+                    } else if (startElement.textContent.trim().replace(Constants.ZWSP, "") === "" && removeStart) {
+                        startElement.remove();
                     }
                 }
-                if (blockEndElement) {
-                    const endElement = hasClosestBlock(rangeClone.endContainer);
-                    if (endElement) {
+                const endElement = hasClosestBlock(rangeClone.endContainer);
+                if (endElement) {
+                    if (blockEndElement) {
                         endElement.insertAdjacentHTML("afterbegin", blockEndElement.innerHTML);
                         blockEndElement.remove();
+                    } else if (endElement.textContent.trim().replace(Constants.ZWSP, "") === "" && removeEnd) {
+                        endElement.remove();
                     }
                 }
                 range.insertNode(contents);
@@ -276,7 +290,7 @@ class WYSIWYG {
         this.element.addEventListener("paste", (event: ClipboardEvent & { target: HTMLElement }) => {
             paste(vditor, event, {
                 pasteCode: (code: string) => {
-                    const range = getEditorRange(this.element);
+                    const range = getEditorRange(vditor);
                     const node = document.createElement("template");
                     node.innerHTML = code;
                     range.insertNode(node.content.cloneNode(true));
@@ -318,7 +332,7 @@ class WYSIWYG {
                 this.preventInput = false;
                 return;
             }
-            if (this.composingLock) {
+            if (this.composingLock ||  event.data === "‘" || event.data === "“" || event.data === "《") {
                 return;
             }
             const range = getSelection().getRangeAt(0);
@@ -387,7 +401,9 @@ class WYSIWYG {
                 return;
             }
 
-            if (event.target.tagName === "IMG") {
+            if (event.target.tagName === "IMG" &&
+                // plantuml 图片渲染不进行提示
+                !event.target.parentElement.classList.contains("vditor-wysiwyg__preview")) {
                 if (event.target.getAttribute("data-type") === "link-ref") {
                     genLinkRefPopover(vditor, event.target);
                 } else {
@@ -396,7 +412,12 @@ class WYSIWYG {
                 return;
             }
 
-            const range = getEditorRange(this.element);
+            // 打开链接
+            if (event.target.tagName === "A") {
+                window.open(event.target.getAttribute("href"));
+            }
+
+            const range = getEditorRange(vditor);
             if (event.target.isEqualNode(this.element) && this.element.lastElementChild && range.collapsed) {
                 const lastRect = this.element.lastElementChild.getBoundingClientRect();
                 if (event.y > lastRect.top + lastRect.height) {
@@ -417,11 +438,14 @@ class WYSIWYG {
             // 点击后光标落于预览区，需展开代码块
             let previewElement = hasClosestByClassName(event.target, "vditor-wysiwyg__preview");
             if (!previewElement) {
-                previewElement = hasClosestByClassName(getEditorRange(this.element).startContainer, "vditor-wysiwyg__preview");
+                previewElement =
+                    hasClosestByClassName(getEditorRange(vditor).startContainer, "vditor-wysiwyg__preview");
             }
             if (previewElement) {
                 showCode(previewElement, vditor);
             }
+
+            clickToc(event, vditor);
         });
 
         this.element.addEventListener("keyup", (event: KeyboardEvent & { target: HTMLElement }) => {
@@ -441,7 +465,7 @@ class WYSIWYG {
                 // 为空时显示 placeholder
                 vditor.wysiwyg.element.innerHTML = "";
             }
-            const range = getEditorRange(this.element);
+            const range = getEditorRange(vditor);
             if (event.key === "Backspace") {
                 // firefox headings https://github.com/Vanessa219/vditor/issues/211
                 if (isFirefox() && range.startContainer.textContent === "\n" && range.startOffset === 1) {

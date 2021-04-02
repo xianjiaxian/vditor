@@ -16,11 +16,11 @@ export const graphvizRender = (element: HTMLElement, cdn = Constants.CDN) => {
     addScript(`${cdn}/dist/js/graphviz/viz.js`, "vditorGraphVizScript").then(() => {
         graphvizElements.forEach((e: HTMLDivElement) => {
             if (e.parentElement.classList.contains("vditor-wysiwyg__pre") ||
-                e.parentElement.classList.contains("vditor-ir__marker--pre ")) {
+                e.parentElement.classList.contains("vditor-ir__marker--pre")) {
                 return;
             }
 
-            if (e.getAttribute("data-processed") === "true") {
+            if (e.getAttribute("data-processed") === "true" || e.textContent.trim() === "") {
                 return;
             }
 
@@ -35,7 +35,7 @@ export const graphvizRender = (element: HTMLElement, cdn = Constants.CDN) => {
                     e.innerHTML = result.outerHTML;
                 }).catch((error) => {
                     e.innerHTML = `graphviz render error: <br>${error}`;
-                    e.className = "vditor-math vditor-reset--error";
+                    e.className = "vditor-reset--error";
                 });
             } catch (e) {
                 console.error("graphviz error", e);

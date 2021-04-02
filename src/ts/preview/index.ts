@@ -10,9 +10,12 @@ import {mathRender} from "../markdown/mathRender";
 import {mediaRender} from "../markdown/mediaRender";
 import {mermaidRender} from "../markdown/mermaidRender";
 import {mindmapRender} from "../markdown/mindmapRender";
+import {plantumlRender} from "../markdown/plantumlRender";
 import {getEventName} from "../util/compatibility";
+import {hasClosestByClassName, hasClosestByMatchTag} from "../util/hasClosest";
 import {hasClosestByTag} from "../util/hasClosestByHeadings";
 import {setSelectionFocus} from "../util/selection";
+import {previewImage} from "./image";
 
 export class Preview {
     public element: HTMLElement;
@@ -28,13 +31,31 @@ export class Preview {
             previewElement.classList.add(vditor.options.classes.preview);
         }
         previewElement.style.maxWidth = vditor.options.preview.maxWidth + "px";
-        previewElement.addEventListener("copy", (event) => {
+        previewElement.addEventListener("copy", (event: ClipboardEvent & { target: HTMLElement }) => {
+            if (event.target.tagName === "TEXTAREA") {
+                // https://github.com/Vanessa219/vditor/issues/901
+                return;
+            }
             const tempElement = document.createElement("div");
             tempElement.className = "vditor-reset";
             tempElement.appendChild(getSelection().getRangeAt(0).cloneContents());
 
             this.copyToX(vditor, tempElement);
             event.preventDefault();
+        });
+        previewElement.addEventListener("click", (event: MouseEvent & { target: HTMLElement }) => {
+            const spanElement = hasClosestByMatchTag(event.target, "SPAN");
+            if (spanElement && hasClosestByClassName(spanElement, "vditor-toc")) {
+                const headingElement =
+                    previewElement.querySelector("#" + spanElement.getAttribute("data-target-id")) as HTMLElement;
+                if (headingElement) {
+                    this.element.scrollTop = headingElement.offsetTop;
+                }
+                return;
+            }
+            if (event.target.tagName === "IMG") {
+                previewImage(event.target as HTMLImageElement, vditor.options.lang, vditor.options.theme);
+            }
         });
 
         const actions = vditor.options.preview.actions;
@@ -66,6 +87,9 @@ export class Preview {
             }
         }
         actionElement.innerHTML = actionHtml.join("");
+        if (actions.length === 0) {
+            actionElement.style.display = "none";
+        }
         this.element.appendChild(actionElement);
         this.element.appendChild(previewElement);
 
@@ -189,17 +213,31 @@ export class Preview {
         codeRender(vditor.preview.element.lastElementChild as HTMLElement, vditor.options.lang);
         highlightRender(vditor.options.preview.hljs, vditor.preview.element.lastElementChild as HTMLElement,
             vditor.options.cdn);
+        mermaidRender(vditor.preview.element.lastElementChild as HTMLElement, vditor.options.cdn, vditor.options.theme);
+        flowchartRender(vditor.preview.element.lastElementChild as HTMLElement, vditor.options.cdn);
+        graphvizRender(vditor.preview.element.lastElementChild as HTMLElement, vditor.options.cdn);
+        chartRender(vditor.preview.element.lastElementChild as HTMLElement, vditor.options.cdn, vditor.options.theme);
+        mindmapRender(vditor.preview.element.lastElementChild as HTMLElement, vditor.options.cdn, vditor.options.theme);
+        plantumlRender(vditor.preview.element.lastElementChild as HTMLElement, vditor.options.cdn);
+        abcRender(vditor.preview.element.lastElementChild as HTMLElement, vditor.options.cdn);
+        mediaRender(vditor.preview.element.lastElementChild as HTMLElement);
+        // toc render
+        const editorElement = vditor.preview.element;
+        let tocHTML = vditor.outline.render(vditor);
+        if (tocHTML === "") {
+            tocHTML = "[ToC]";
+        }
+        editorElement.querySelectorAll('[data-type="toc-block"]').forEach((item: HTMLElement) => {
+            item.innerHTML = tocHTML;
+            mathRender(item, {
+                cdn: vditor.options.cdn,
+                math: vditor.options.preview.math,
+            });
+        });
         mathRender(vditor.preview.element.lastElementChild as HTMLElement, {
             cdn: vditor.options.cdn,
             math: vditor.options.preview.math,
         });
-        mermaidRender(vditor.preview.element.lastElementChild as HTMLElement, vditor.options.cdn);
-        flowchartRender(vditor.preview.element.lastElementChild as HTMLElement, vditor.options.cdn);
-        graphvizRender(vditor.preview.element.lastElementChild as HTMLElement, vditor.options.cdn);
-        chartRender(vditor.preview.element.lastElementChild as HTMLElement, vditor.options.cdn);
-        mindmapRender(vditor.preview.element.lastElementChild as HTMLElement, vditor.options.cdn);
-        abcRender(vditor.preview.element.lastElementChild as HTMLElement, vditor.options.cdn);
-        mediaRender(vditor.preview.element.lastElementChild as HTMLElement);
     }
 
     private copyToX(vditor: IVditor, copyElement: HTMLElement, type = "mp-wechat") {
@@ -209,7 +247,7 @@ export class Preview {
                 item.style.display = "initial";
             });
         } else {
-            copyElement.querySelectorAll(".vditor-math").forEach((item: HTMLElement) => {
+            copyElement.querySelectorAll(".language-math").forEach((item: HTMLElement) => {
                 item.outerHTML = `<img class="Formula-image" data-eeimg="true" src="//www.zhihu.com/equation?tex=" alt="${item.getAttribute("data-math")}\\" style="display: block; margin: 0 auto; max-width: 100%;">`;
             });
         }

@@ -223,6 +223,21 @@ $$
 - 快捷键
 ```
 
+### plantuml
+
+```plantuml
+@startuml component
+actor client
+node app
+database db
+
+db -> app
+app -> client
+@enduml
+```
+
+更多图形参考[https://plantuml.com/zh/](https://plantuml.com/zh/)
+
 ### 流程图
 
 ```mermaid
@@ -333,6 +348,19 @@ digraph finite_state_machine {
     q2 -> q1 [ label = "b" ];
     q2 -> q2 [ label = "b" ];
 }
+```
+
+### Flowchart
+
+```flowchart
+st=>start: Start
+op=>operation: Your Operation
+cond=>condition: Yes or No?
+e=>end
+
+st->op->cond
+cond(yes)->e
+cond(no)->op
 ```
 
 ### 多媒体

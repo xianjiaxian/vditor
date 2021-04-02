@@ -2,7 +2,7 @@ import {Constants} from "../constants";
 import {isCtrl, isFirefox} from "../util/compatibility";
 import {
     blurEvent,
-    copyEvent, cutEvent,
+    copyEvent, cutEvent, dblclickEvent,
     dropEvent,
     focusEvent,
     hotkeyEvent,
@@ -10,17 +10,19 @@ import {
     selectEvent,
 } from "../util/editorCommonEvent";
 import {paste} from "../util/fixBrowserBehavior";
-import {hasClosestByClassName} from "../util/hasClosest";
+import {hasClosestByAttribute, hasClosestByClassName} from "../util/hasClosest";
 import {
     getEditorRange, setRangeByWbr,
     setSelectionFocus,
 } from "../util/selection";
+import {clickToc} from "../util/toc";
 import {expandMarker} from "./expandMarker";
 import {highlightToolbarIR} from "./highlightToolbarIR";
 import {input} from "./input";
 import {processAfterRender, processHint} from "./process";
 
 class IR {
+    public range: Range;
     public element: HTMLPreElement;
     public processTimeoutId: number;
     public hlToolbarTimeoutId: number;
@@ -39,6 +41,7 @@ class IR {
         this.bindEvent(vditor);
 
         focusEvent(vditor, this.element);
+        dblclickEvent(vditor, this.element);
         blurEvent(vditor, this.element);
         hotkeyEvent(vditor, this.element);
         selectEvent(vditor, this.element);
@@ -91,7 +94,7 @@ class IR {
                 this.preventInput = false;
                 return;
             }
-            if (this.composingLock) {
+            if (this.composingLock || event.data === "‘" || event.data === "“" || event.data === "《") {
                 return;
             }
             input(vditor, getSelection().getRangeAt(0).cloneRange(), false, event);
@@ -109,7 +112,7 @@ class IR {
                 return;
             }
 
-            const range = getEditorRange(this.element);
+            const range = getEditorRange(vditor);
 
             // 点击后光标落于预览区
             let previewElement = hasClosestByClassName(event.target, "vditor-ir__preview");
@@ -138,6 +141,12 @@ class IR {
                     setSelectionFocus(range);
                 }
             }
+            // 打开链接
+            const aElement = hasClosestByAttribute(event.target, "data-type", "a");
+            if (aElement && (!aElement.classList.contains("vditor-ir__node--expand"))) {
+                window.open(aElement.querySelector(":scope > .vditor-ir__marker--link").textContent);
+                return;
+            }
 
             if (event.target.isEqualNode(this.element) && this.element.lastElementChild && range.collapsed) {
                 const lastRect = this.element.lastElementChild.getBoundingClientRect();
@@ -159,10 +168,10 @@ class IR {
             } else {
                 // https://github.com/Vanessa219/vditor/pull/681 当点击选中区域时 eventTarget 与 range 不一致，需延迟等待 range 发生变化
                 setTimeout(() => {
-                    expandMarker(getEditorRange(this.element), vditor);
+                    expandMarker(getEditorRange(vditor), vditor);
                 });
             }
-
+            clickToc(event, vditor);
             highlightToolbarIR(vditor);
         });
 
@@ -183,7 +192,7 @@ class IR {
                 vditor.ir.element.innerHTML = "";
                 return;
             }
-            const range = getEditorRange(this.element);
+            const range = getEditorRange(vditor);
             if (event.key === "Backspace") {
                 // firefox headings https://github.com/Vanessa219/vditor/issues/211
                 if (isFirefox() && range.startContainer.textContent === "\n" && range.startOffset === 1) {

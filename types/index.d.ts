@@ -130,9 +130,17 @@ declare class Lute {
 
     public SetChineseParagraphBeginningSpace(enable: boolean): void;
 
+    public SetHeadingID(enable: boolean): void;
+
     public SetRenderListStyle(enable: boolean): void;
 
     public SetLinkBase(url: string): void;
+
+    public SetVditorIR(enable: boolean): void;
+
+    public SetVditorSV(enable: boolean): void;
+
+    public SetVditorWYSIWYG(enable: boolean): void;
 
     public SetLinkPrefix(url: string): void;
 
@@ -151,8 +159,6 @@ declare class Lute {
     public SetFootnotes(enable: boolean): void;
 
     public SetAutoSpace(enable: boolean): void;
-
-    public SetChinesePunct(enable: boolean): void;
 
     public SetFixTermTypo(enable: boolean): void;
 
@@ -312,7 +318,7 @@ interface IMenuItem {
     level?: number;
 
     /** 自定义按钮点击时触发的事件 */
-    click?(status?: boolean): void;
+    click?(event: Event, vditor: IVditor): void;
 }
 
 /** @link https://ld246.com/article/1549638745630#options-preview-hljs */
@@ -343,8 +349,6 @@ interface IMarkdownConfig {
     paragraphBeginningSpace?: boolean;
     /** 自动矫正术语。默认值: false */
     fixTermTypo?: boolean;
-    /** 自动矫正标点。默认值: false */
-    chinesePunct?: boolean;
     /** 插入目录。默认值: false */
     toc?: boolean;
     /** 脚注。默认值: true */
@@ -409,6 +413,7 @@ interface IPreviewActionCustom {
 }
 
 interface IPreviewOptions {
+    mode: "dark" | "light";
     customEmoji?: IObject;
     lang?: (keyof II18n);
     lazyLoadImage?: string;
@@ -443,6 +448,8 @@ interface IHintExtend {
 
 /** @link https://ld246.com/article/1549638745630#options-hint */
 interface IHint {
+    /** 提示内容是否进行 md 解析 */
+    parse?: boolean;
     /** 常用表情提示 HTML */
     emojiTail?: string;
     /** 提示 debounce 毫秒间隔。默认值: 200 */
@@ -463,6 +470,8 @@ interface IResize {
 
 /** @link https://ld246.com/article/1549638745630#options */
 interface IOptions {
+    /** 历史记录间隔 */
+    undoDelay?: number;
     /** 内部调试时使用 */
     _lutePath?: string;
     /** 编辑器初始化值。默认值: '' */
@@ -481,6 +490,10 @@ interface IOptions {
     placeholder?: string;
     /** 多语言。默认值: 'zh_CN' */
     lang?: (keyof II18n);
+    /** @link https://ld246.com/article/1549638745630#options-fullscreen */
+    fullscreen?: {
+        index: number;
+    };
     /** @link https://ld246.com/article/1549638745630#options-toolbar */
     toolbar?: Array<string | IMenuItem>;
     /** @link https://ld246.com/article/1549638745630#options-resize */
@@ -490,6 +503,11 @@ interface IOptions {
         enable: boolean;
         max?: number;
         type?: "markdown" | "text";
+        after?(length: number, counter: {
+            enable: boolean;
+            max?: number;
+            type?: "markdown" | "text"
+        }): void
     };
     /** @link https://ld246.com/article/1549638745630#options-cache */
     cache?: {
@@ -528,8 +546,11 @@ interface IOptions {
     cdn?: string;
     /** tab 键操作字符串，支持 \t 及任意字符串 */
     tab?: string;
-    /** 是否展现大纲。默认值：'false' */
-    outline?: boolean;
+    /** @link https://ld246.com/article/1549638745630#options-outline */
+    outline?: {
+        enable: boolean,
+        position: "left" | "right",
+    };
 
     /** 编辑器异步渲染完成后的回调方法 */
     after?(): void;
@@ -571,7 +592,7 @@ interface IVditor {
     };
     outline: {
         element: HTMLElement,
-        render(vditor: IVditor): void,
+        render(vditor: IVditor): string,
         toggle(vditor: IVditor, show?: boolean): void,
     };
     toolbar?: {
@@ -617,6 +638,7 @@ interface IVditor {
         resetIcon(vditor: IVditor): void,
     };
     wysiwyg?: {
+        range: Range,
         element: HTMLPreElement,
         selectPopover: HTMLDivElement,
         popover: HTMLDivElement,
@@ -631,6 +653,7 @@ interface IVditor {
         hideComment(): void,
     };
     ir?: {
+        range: Range,
         element: HTMLPreElement,
         composingLock: boolean,
         preventInput: boolean,
@@ -638,6 +661,7 @@ interface IVditor {
         hlToolbarTimeoutId: number,
     };
     sv?: {
+        range: Range,
         element: HTMLPreElement,
         processTimeoutId: number,
         hlToolbarTimeoutId: number,

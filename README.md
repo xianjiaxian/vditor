@@ -54,7 +54,7 @@ Vditor 在这些方面做了努力，希望能为现代化的通用 Markdown 编
 ## ✨  特性
 
 * 支持三种编辑模式：所见即所得（wysiwyg）、即时渲染（ir）、分屏预览（sv）
-* 支持大纲、数学公式、脑图、图表、流程图、甘特图、时序图、五线谱、[多媒体](https://ld246.com/article/1589813914768)、语音阅读、标题锚点、代码高亮及复制、graphviz 渲染
+* 支持大纲、数学公式、脑图、图表、流程图、甘特图、时序图、五线谱、[多媒体](https://ld246.com/article/1589813914768)、语音阅读、标题锚点、代码高亮及复制、graphviz 渲染、[plantuml](https://plantuml.com)UML图
 * 内置安全过滤、导出、图片懒加载、任务列表、多平台预览、多主题切换、复制到微信公众号/知乎功能
 * 实现 CommonMark 和 GFM 规范，可对 Markdown 进行格式化和语法树查看，并支持[10+项](https://ld246.com/article/1549638745630#options-preview-markdown)配置
 * 工具栏包含 36+ 项操作，除支持扩展外还可对每一项中的[快捷键](https://ld246.com/article/1582778815353)、提示、提示位置、图标、点击事件、类名、子工具栏进行自定义
@@ -145,7 +145,7 @@ const vditor = new Vditor(id, {options...})
 ```html
 <!-- ⚠️生产环境请指定版本号，如 https://cdn.jsdelivr.net/npm/vditor@x.x.x/dist... -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vditor/dist/index.css" />
-<script src="https://cdn.jsdelivr.net/npm/vditor/dist/index.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/vditor/dist/index.min.js"></script>
 ```
 
 ### 示例代码
@@ -194,18 +194,19 @@ Markdown 输出的 HTML 所展现的外观。内置 light，dark，wechat 3 套�
 
 |   | 说明 | 默认值 |
 | - | - | - |
+| undoDelay | 历史记录间隔 | - |
 | after | 编辑器异步渲染完成后的回调方法 | - |
 | height | 编辑器总高度 | 'auto' |
 | minHeight | 编辑区域最小高度 | - |
 | width | 编辑器总宽度，支持 % | 'auto' |
 | placeholder | 输入区域为空时的提示 | '' |
 | lang | 多语言：en_US, ja_JP, ko_KR, zh_CN | 'zh_CN' |
-| input(value: string, previewElement?: HTMLElement): void | 输入后触发  | - |
-| focus(value: string): void | 聚焦后触发 | - |
-| blur(value: string): void | 失焦后触发 | - |
-| esc(value: string): void | <kbd>esc</kbd> 按下后触发 | - |
-| ctrlEnter(value: string): void | <kbd>⌘/ctrl+enter</kbd> 按下后触发 | - |
-| select(value: string): void | 编辑器中选中文字后触发 | - |
+| input(value: string) | 输入后触发  | - |
+| focus(value: string) | 聚焦后触发 | - |
+| blur(value: string) | 失焦后触发 | - |
+| esc(value: string) | <kbd>esc</kbd> 按下后触发 | - |
+| ctrlEnter(value: string) | <kbd>⌘/ctrl+enter</kbd> 按下后触发 | - |
+| select(value: string) | 编辑器中选中文字后触发 | - |
 | tab | <kbd>tab</kbd> 键操作字符串，支持 `\t` 及任意字符串 | - |
 | typewriterMode | 是否启用打字机模式 | false |
 | cdn | 配置自建 CDN 地址 | `https://cdn.jsdelivr.net/npm/vditor@${VDITOR_VERSION}` |
@@ -214,7 +215,6 @@ Markdown 输出的 HTML 所展现的外观。内置 light，dark，wechat 3 套�
 | value | 编辑器初始化值 | '' |
 | theme | 主题：classic, dark | 'classic' |
 | icon | 图标风格：ant, material | 'ant' |
-| outline | 是否展现大纲 | false |
 
 #### options.toolbar
 
@@ -226,7 +226,7 @@ Markdown 输出的 HTML 所展现的外观。内置 light，dark，wechat 3 套�
 new Vditor('vditor', {
   toolbar: [
     {
-      hotkey: '⌘-⇧-S',
+      hotkey: '⇧⌘S',
       name: 'sponsor',
       tipPosition: 's',
       tip: '成为赞助者',
@@ -242,11 +242,11 @@ new Vditor('vditor', {
 | name | 唯一标示 | - |
 | icon | svg 图标 | - |
 | tip | 提示 | - |
-| tipPosition | 提示位置：ne, nw | - |
-| hotkey | 快捷键，格式为<kbd>⌘/ctrl-key</kbd> 或 <kbd>⌘/ctrl-⇧/shift-key</kbd> | - |
+| tipPosition | 提示位置：'n', 'ne', 'nw', 's', 'se', 'sw', 'w', 'e' | - |
+| hotkey | 快捷键，格式为<kbd>⇧⌘</kbd>/<kbd>⌘</kbd>/<kbd>⌥⌘</kbd>| - |
 | suffix | 插入编辑器中的后缀 | - |
 | prefix | 插入编辑器中的前缀 | - |
-| click(): void | 自定义按钮点击时触发的事件 | - |
+| click(event: Event, vditor: IVditor) | 自定义按钮点击时触发的事件 | - |
 | className | 样式名 | '' |
 | toolbar?: Array<options.toolbar> | 子菜单 | - |
 
@@ -262,8 +262,9 @@ new Vditor('vditor', {
 |   | 说明 | 默认值 |
 | - | - | - |
 | enable | 是否启用计数器 | false |
+| tipPosition(length: number, counter: options.counter): void | 字数统计回调 | - |
 | max | 允许输入的最大值 | - |
-| type | 统计类型：md，text | 'md' |
+| type | 统计类型：'markdown', 'text' | 'markdown' |
 
 #### options.cache
 
@@ -273,6 +274,18 @@ new Vditor('vditor', {
 | id | 缓存 key，第一个参数为元素且启用缓存时**必填** | - |
 | after(html: string): string | 缓存后的回调 | - |
 
+#### options.comment
+
+⚠️：仅支持 wysiwyg 模式
+
+|   | 说明 | 默认值 |
+| - | - | - |
+| enable | 是否启用评论模式 | false |
+| add(id: string, text: string, commentsData: ICommentsData[]) | 添加评论回调 | - |
+| remove(ids: string[]) | 删除评论回调 | - |
+| scroll(top: number) | 滚动回调 | - |
+| adjustTop(commentsData: ICommentsData[]) | 文档修改时，适配评论高度 | - |
+
 #### options.preview
 
 |   | 说明 | 默认值 |
@@ -281,7 +294,7 @@ new Vditor('vditor', {
 | maxWidth | 预览区域最大宽度 | 800 |
 | mode | 显示模式：both, editor | 'both' |
 | url | md 解析请求 | - |
-| parse(element: HTMLElement): void | 预览回调 | - |
+| parse(element: HTMLElement) | 预览回调 | - |
 | transform(html: string): string | 渲染之前回调 | - |
 
 #### options.preview.hljs
@@ -298,7 +311,6 @@ new Vditor('vditor', {
 | - | - | - |
 | autoSpace | 自动空格 | false |
 | fixTermTypo | 自动矫正术语 | false |
-| chinesePunct | 自动矫正标点 | false |
 | toc | 插入目录 | false |
 | footnotes | 脚注 | true |
 | codeBlockPreview | wysiwyg 和 ir 模式下是否对代码块进行渲染 | true |
@@ -335,13 +347,15 @@ new Vditor('vditor', {
 | - | - | - |
 | key | 按钮唯一标识，不能为空 | - |
 | text | 按钮文字 | - |
+| tooltip | 提示 | - |
 | className | 按钮类名 | - |
-| click(key: string) => void | 按钮点击回调事件 | - |
+| click(key: string) | 按钮点击回调事件 | - |
 
 #### options.hint
 
 |   | 说明 | 默认值 |
 | - | - | - |
+| parse | 是否进行 md 解析 | true |
 | delay | 提示 debounce 毫秒间隔 | 200 |
 | emoji | 默认表情，可从[lute/emoji_map](https://github.com/88250/lute/blob/master/parse/emoji_map.go) 中选取，也可自定义 | { '+1': '👍', '-1': '👎', 'heart': '❤️', 'cold_sweat': '😰' } |
 | emojiTail | 常用表情提示 | - |
@@ -423,10 +437,10 @@ if (xhr.status === 200) {
 | url | 上传 url | '' |
 | max | 上传文件最大 Byte | 10 * 1024 * 1024 |
 | linkToImgUrl | 剪切板中包含图片地址时，使用此 url 重新上传 | '' |
-| linkToImgCallback(responseText: string): void | 图片地址上传回调 | - |
+| linkToImgCallback(responseText: string) | 图片地址上传回调 | - |
 | linkToImgFormat(responseText: string): string | 对图片地址上传的返回值进行格式化 | - |
-| success(editor: HTMLPreElement, msg: string): void | 上传成功回调 | - |
-| error(msg: string): void | 上传失败回调 | - |
+| success(editor: HTMLPreElement, msg: string) | 上传成功回调 | - |
+| error(msg: string) | 上传失败回调 | - |
 | token | CORS 上传验证，头为 X-Upload-Token | - |
 | withCredentials | 跨站点访问控制 | false |
 | headers | 请求头设置 | - |
@@ -446,14 +460,27 @@ if (xhr.status === 200) {
 |   | 说明 | 默认值 |
 | - | - | - |
 | enable | 是否支持大小拖拽 | false |
-| position | 拖拽栏位置：top, bottom | 'bottom' |
-| after(height: number): void | 拖拽结束的回调 | - |
+| position | 拖拽栏位置：'top', 'bottom' | 'bottom' |
+| after(height: number) | 拖拽结束的回调 | - |
 
 #### options.classes
 
 |   | 说明 | 默认值 |
 | - | - | - |
 | preview | 预览元素上的 className | '' |
+
+#### options.fullscreen
+
+|   | 说明 | 默认值 |
+| - | - | - |
+| index | 全屏层级 | 90 |
+
+#### options.outline
+
+|   | 说明 | 默认值 |
+| - | - | - |
+| enable | 初始化是否展现大纲 | false |
+| position | 大纲位置：'left', 'right' | 'left' |
 
 #### methods
 
@@ -482,7 +509,11 @@ if (xhr.status === 200) {
 | setPreviewMode(mode: "both" \| "editor") | 设置预览模式 |
 | setTheme(theme: "dark" \| "classic", contentTheme?: string, codeTheme?: string, contentThemePath?: string) | 设置主题、内容主题及代码块风格 |
 | getCurrentMode(): string | 获取编辑器当前编辑模式 |
-| destroy() |销毁编辑器|
+| destroy() | 销毁编辑器 |
+| getCommentIds(): {id: string, top: number}[] | 获取所有评论 |
+| hlCommentIds(ids: string[]) | 高亮评论 |
+| unHlCommentIds(ids: string[]) | 取消评论高亮 |
+| removeCommentIds(removeIds: string[]) | 删除评论 |
 
 #### static methods
 
@@ -502,23 +533,24 @@ VditorPreview.mermaidRender(document)
 ```ts
 previewElement: HTMLDivElement,   // 使用该元素进行渲染
 markdown: string,  // 需要渲染的 markdown 原文
-options?: IPreviewOptions {  
- anchor?: number;  // 为标题添加锚点 0：不渲染；1：渲染于标题前；2：渲染于标题后，默认 0
- customEmoji?: { [key: string]: string };    // 自定义 emoji，默认为 {}  
- lang?: (keyof II18nLang);    // 语言，默认为 'zh_CN'  
- emojiPath?: string;    // 表情图片路径 
- hljs?: IHljs; // 参见 options.preview.hljs 
- speech?: {  // 对选中后的内容进行阅读
-  enable?: boolean,
- };
- math?: IMath; // 数学公式渲染配置
- cdn?: string; // 自建 CDN 地址
- transform?(html: string): string; // 在渲染前进行的回调方法
- after?(): void; // 渲染完成后的回调
- lazyLoadImage?: string; // 设置为 Loading 图片地址后将启用图片的懒加载
- markdown?: options.preview.markdown;
- theme?: options.preview.theme;
- renderers?: ILuteRender; // 自定义渲染 https://ld246.com/article/1588412297062
+options?: IPreviewOptions {
+  mode: "dark" | "light";
+  anchor?: number;  // 为标题添加锚点 0：不渲染；1：渲染于标题前；2：渲染于标题后，默认 0
+  customEmoji?: { [key: string]: string };    // 自定义 emoji，默认为 {}  
+  lang?: (keyof II18nLang);    // 语言，默认为 'zh_CN'  
+  emojiPath?: string;    // 表情图片路径 
+  hljs?: IHljs; // 参见 options.preview.hljs 
+  speech?: {  // 对选中后的内容进行阅读
+    enable?: boolean,
+  };
+  math?: IMath; // 数学公式渲染配置
+  cdn?: string; // 自建 CDN 地址
+  transform?(html: string): string; // 在渲染前进行的回调方法
+  after?(); // 渲染完成后的回调
+  lazyLoadImage?: string; // 设置为 Loading 图片地址后将启用图片的懒加载
+  markdown?: options.preview.markdown;
+  theme?: options.preview.theme;
+  renderers?: ILuteRender; // 自定义渲染 https://ld246.com/article/1588412297062
 }
 ```
 
@@ -526,11 +558,13 @@ options?: IPreviewOptions {
 
 |   | 说明 |
 | - | - |
-| mermaidRender(element: HTMLElement, cdn = options.cdn) | 流程图/时序图/甘特图 |
+| previewImage(oldImgElement: HTMLImageElement, lang: keyof II18n = "zh_CN", theme = "classic") | 点击图片预览 |
+| mermaidRender(element: HTMLElement, cdn = options.cdn, theme = options.theme) | 流程图/时序图/甘特图 |
 | flowchartRender(element: HTMLElement, cdn = options.cdn) | flowchart 渲染 |
 | codeRender(element: HTMLElement, lang: (keyof II18nLang) = "zh_CN") | 为 element 中的代码块添加复制按钮 |
-| chartRender(element: (HTMLElement \| Document) = document, cdn = options.cdn) | 图表渲染 |
-| mindmapRender(element: (HTMLElement \| Document) = document, cdn = options.cdn) | 脑图渲染 |
+| chartRender(element: (HTMLElement \| Document) = document, cdn = options.cdn, theme = options.theme) | 图表渲染 |
+| mindmapRender(element: (HTMLElement \| Document) = document, cdn = options.cdn, theme = options.theme) | 脑图渲染 |
+| plantumlRender(element: (HTMLElement \| Document) = document, cdn = options.cdn) | plantuml 渲染 |
 | abcRender(element: (HTMLElement \| Document) = document, cdn = options.cdn) | 五线谱渲染 |
 | md2html(mdText: string, options?: IPreviewOptions): Promise\<string> | Markdown 文本转换为 HTML，该方法需使用[异步编程](https://ld246.com/article/1546828434083?r=Vanessa#toc_h3_1) |
 | preview(previewElement: HTMLDivElement, markdown: string, options?: IPreviewOptions) | 页面 Markdown 文章渲染 |

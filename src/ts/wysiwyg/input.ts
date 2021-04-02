@@ -1,12 +1,12 @@
-import {isToC, renderToc} from "../util/fixBrowserBehavior";
 import {
     getTopList,
     hasClosestBlock, hasClosestByAttribute, hasTopClosestByTag,
 } from "../util/hasClosest";
-import {hasClosestByHeadings, hasClosestByTag} from "../util/hasClosestByHeadings";
+import { hasClosestByTag} from "../util/hasClosestByHeadings";
 import {log} from "../util/log";
 import {processCodeRender} from "../util/processCode";
 import {setRangeByWbr} from "../util/selection";
+import {renderToc} from "../util/toc";
 import {afterRenderEvent} from "./afterRenderEvent";
 import {previoueIsEmptyA} from "./inlineTag";
 
@@ -64,8 +64,8 @@ export const input = (vditor: IVditor, range: Range, event?: InputEvent) => {
         });
 
         let html = "";
-        if (blockElement.getAttribute("data-type") === "link-ref-defs-block" || isToC(blockElement.innerText)) {
-            // 修改链接引用或 ToC
+        if (blockElement.getAttribute("data-type") === "link-ref-defs-block") {
+            // 修改链接引用
             blockElement = vditor.wysiwyg.element;
         }
 
@@ -187,11 +187,6 @@ export const input = (vditor: IVditor, range: Range, event?: InputEvent) => {
             vditor.wysiwyg.element.insertAdjacentElement("beforeend", allFootnoteElement[0]);
         }
 
-        if (hasClosestByHeadings(blockElement) || html.startsWith("<h") || event?.inputType === "deleteContentBackward"
-            || event?.inputType === "deleteContentForward") {
-            renderToc(vditor);
-        }
-
         // 设置光标
         setRangeByWbr(vditor.wysiwyg.element, range);
 
@@ -206,7 +201,7 @@ export const input = (vditor: IVditor, range: Range, event?: InputEvent) => {
             vditor.options.comment.adjustTop(vditor.wysiwyg.getComments(vditor, true));
         }
     }
-
+    renderToc(vditor);
     afterRenderEvent(vditor, {
         enableAddUndoStack: true,
         enableHint: true,
